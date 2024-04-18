@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tensor Multiplication with TensorFlow.js</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col">
+                <h1 class="text-center">Tensor Multiplication with TensorFlow.js</h1>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Tensor 1</th>
+                            <th>Tensor 2</th>
+                            <th>Resultado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="output"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.14.0"></script>
+
+    <script>
+        // Función para generar un tensor de tamaño 10x10 con números del 1 al 9
+        function generateTensor() {
+            return tf.randomUniform([300, 300], 1, 10, 'int32');
+        }
+
+        // Mostrar información sobre la memoria
+        function logMemoryUsage(message) {
+            const memoryInfo = tf.memory();
+            console.log(message, memoryInfo.numBytes / (1024 * 1024), 'MB');
+        }
+
+        // Inicializar variables
+        let totalMemoryUsed = 0;
+        let iterations = 0;
+
+        // Repetir hasta que la memoria total utilizada sea aproximadamente 64 MB
+        while (totalMemoryUsed < 64 * 1024 * 1024) {
+            // Generar dos tensores y multiplicarlos
+            const tensor1 = generateTensor();
+            const tensor2 = generateTensor();
+            const result = tf.matMul(tensor1, tensor2);
+
+            // Actualizar la memoria total utilizada
+            const memoryInfo = tf.memory();
+            totalMemoryUsed = memoryInfo.numBytes;
+
+            // Mostrar información sobre la memoria
+            logMemoryUsage(`Después de la iteración ${iterations + 1}:`);
+
+            // Mostrar el resultado en la tabla
+            const outputTable = document.getElementById('output');
+            tf.tidy(() => {
+                for (let i = 0; i < 10; i++) { // Mostramos solo las primeras 10 filas por simplicidad
+                    const row = outputTable.insertRow();
+                    for (let j = 0; j < 3; j++) {
+                        const cell = row.insertCell();
+                        if (j === 0) {
+                            cell.innerText = tensor1.slice([i, 0], [1, -1]).arraySync();
+                        } else if (j === 1) {
+                            cell.innerText = tensor2.slice([i, 0], [1, -1]).arraySync();
+                        } else {
+                            cell.innerText = result.slice([i, 0], [1, -1]).arraySync();
+                        }
+                    }
+                }
+            });
+            iterations++;
+        }
+
+        // Liberar memoria después de alcanzar los 64 MB
+        logMemoryUsage("Antes de liberar la memoria:");
+        tf.disposeVariables();
+        logMemoryUsage("Después de liberar la memoria:");
+    </script>
+</body>
+</html>
